@@ -1,7 +1,7 @@
 ---
 description: Visual review of a Vanilla / Jinja demo PR, in Mattea's voice
 argument-hint: <pr-url-or-number>
-allowed-tools: Bash(gh:*), Read, Grep, Glob, WebFetch
+allowed-tools: Bash(gh:*), Bash(node:*), Bash(mkdir:*), Read, Grep, Glob, WebFetch, mcp__figma__*
 ---
 
 # Visual review: $ARGUMENTS
@@ -10,8 +10,8 @@ You are doing a **design visual review** of a Canonical `vanilla-framework`
 (or ubuntu.com / canonical.com) demo PR, and writing it up **in Mattea's voice**
 (see the Voice section at the bottom — match it closely).
 
-Order of work: gather → **general checks** → identify each pattern → per-pattern
-checks → **confirm every pattern at mobile / tablet / desktop** → write up.
+Order of work: gather → **Figma comparison** → **general checks** → identify each pattern → per-pattern
+checks → **responsive screenshots** → write up.
 
 Most checks are verifiable from the code (Vanilla spacing is class-driven, not
 hand-typed px). Render / compare to Figma where code alone can't tell you.
@@ -21,7 +21,7 @@ hand-typed px). Render / compare to Figma where code alone can't tell you.
 ## Step 0 — Gather the PR
 
 ```
-gh pr view $ARGUMENTS --json title,body,url,files,headRefName
+gh pr view $ARGUMENTS --json title,body,url,files,headRefName,author
 gh pr diff $ARGUMENTS
 ```
 
@@ -33,6 +33,22 @@ changed templates, changed SCSS, the demo/example page, any preview URL, and the
 > from the PR body. **If there's no Figma link, raise it as a finding** (politely
 > ask the dev to add it) before reviewing, since it's the reference everything else
 > is checked against.
+
+---
+
+## Step 0.5 — Figma comparison
+
+Extract the Figma link from the PR body. The URL contains a `node-id` param — use
+the Figma MCP to fetch that node and note:
+- Expected spacing tokens and layout for each section
+- Component names (so you can match them to patterns in Step 2)
+- Image/asset dimensions and aspect ratios
+- Any visible discrepancies vs. what the code produces
+
+Refer back to these notes when writing up each pattern's findings.
+
+If no Figma link is present: skip this step, fall back to pattern-first checks
+below, and raise the missing link as a finding in the write-up.
 
 ---
 
@@ -127,19 +143,28 @@ Verify the classes, not raw px:
 
 ---
 
-## Cross-cutting — Responsive (check EVERY pattern)
+## Step 3 — Responsive screenshots
 
-Confirm each pattern at all three breakpoints — open the demo (or run `dotrun`) and
-view at roughly:
+If the PR body includes a preview URL, take screenshots at three viewports and
+inspect each one visually:
 
-- **Mobile** ≈ 375px (Vanilla "small")
-- **Tablet** ≈ 768px (Vanilla "medium")
-- **Desktop** ≈ 1280px (Vanilla "large")
+```bash
+mkdir -p /tmp/vr-screenshots
+node /Users/MatteaWork/.claude/tools/screenshots/capture.mjs <PREVIEW_URL> /tmp/vr-screenshots
+```
 
-At each: content stacks sensibly, no overflow / overlap, images scale, spacing tiers
-still hold. Don't eyeball padding — read it: `getComputedStyle(el).paddingBottom`.
-Raise broken responsive behaviour as a real flag; offer enhancements (e.g. dropping
-images at small breakpoints where they don't scale well) as hedged suggestions.
+Then Read each image:
+- `/tmp/vr-screenshots/mobile.png` — 375px (Vanilla "small")
+- `/tmp/vr-screenshots/tablet.png` — 768px (Vanilla "medium")
+- `/tmp/vr-screenshots/desktop.png` — 1280px (Vanilla "large")
+
+At each breakpoint: content stacks sensibly, no overflow / overlap, images scale and
+aren't oversized, spacing tiers hold. Raise broken behaviour as a real flag; offer
+enhancements (e.g. hiding images at mobile where they don't scale well) as hedged
+suggestions.
+
+If no preview URL is in the PR, note this and ask the author to confirm responsive
+behaviour manually.
 
 ---
 
