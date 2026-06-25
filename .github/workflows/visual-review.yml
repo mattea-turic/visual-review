@@ -1,0 +1,23 @@
+name: Visual Review
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  visual-review:
+    if: |
+      github.event.comment.body == '/visual-review' &&
+      github.event.issue.pull_request != null
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: mattea-turic/visual-review@main
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          figma-token: ${{ secrets.FIGMA_TOKEN }}
+          pr-number: ${{ github.event.issue.number }}
+          repo: ${{ github.repository }}

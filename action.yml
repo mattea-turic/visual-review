@@ -1,0 +1,45 @@
+name: Visual Review
+description: AI-powered visual review of Canonical Vanilla/Jinja demo PRs, in Mattea's voice
+author: mattea-turic
+
+inputs:
+  anthropic-api-key:
+    required: true
+    description: Anthropic API key
+  github-token:
+    required: true
+    description: GitHub token for reading PRs and posting comments
+  figma-token:
+    required: false
+    description: Figma personal access token for design comparison
+  pr-number:
+    required: true
+    description: PR number to review
+  repo:
+    required: true
+    description: Repository in owner/name format
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm ci
+    - name: Install Playwright browser
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npx playwright install chromium --with-deps
+    - name: Run visual review
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        FIGMA_TOKEN: ${{ inputs.figma-token }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        REPO: ${{ inputs.repo }}
+      run: node review.mjs
