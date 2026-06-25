@@ -184,9 +184,9 @@ behaviour manually.
 - **Scope things out** politely: *"this would be a discussion at a later time"*,
   *"should be investigated a lil (cc: @x @y)"*; cc colleagues when it's broader than
   this PR.
-- Casual register fine: *pls, lil, kinda, Lmk*, em-dashes.
-- Close effort-aware when you've suggested rework: *"Lmk if the above takes too much
-  engineering effort, though!"*
+- Casual register fine: *pls, little, kinda, Lmk*, em-dashes.
+- Only close with *"Lmk if the above takes too much engineering effort, though!"* if
+  the asks genuinely involve significant rework. Omit it for minor or easy changes.
 
 End with an overall call: **approve / comment / request changes**. Write it so it
 pastes straight into a GitHub review.
