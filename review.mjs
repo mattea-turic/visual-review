@@ -1,12 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { chromium } from 'playwright';
-import { readFileSync } from 'fs';
+import { readFileSync, appendFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const { ANTHROPIC_API_KEY, GITHUB_TOKEN, FIGMA_TOKEN, PR_NUMBER, REPO } = process.env;
+const { ANTHROPIC_API_KEY, GITHUB_TOKEN, FIGMA_TOKEN, PR_NUMBER, REPO, GITHUB_RUN_ID, GITHUB_STEP_SUMMARY } = process.env;
 const [owner, repoName] = REPO.split('/');
 
 async function ghFetch(path, opts = {}) {
@@ -153,11 +153,17 @@ const response = await client.messages.create({
 
 const review = response.content[0].text;
 
-// Post review as comment
-console.log('Posting review...');
+// Write draft to Actions run summary so the user can copy it
+const runUrl = `https://github.com/${owner}/${repoName}/actions/runs/${GITHUB_RUN_ID}`;
+appendFileSync(GITHUB_STEP_SUMMARY, `## Visual review draft\n\n${review}\n`);
+
+// Post a small notification comment (not the review itself)
+console.log('Posting draft-ready notification...');
 await ghFetch(`/repos/${owner}/${repoName}/issues/${PR_NUMBER}/comments`, {
   method: 'POST',
-  body: JSON.stringify({ body: `<!-- visual-review-bot -->\n${review}` }),
+  body: JSON.stringify({
+    body: `📝 **Visual review draft is ready** — [click here to view and copy it](${runUrl}), then paste into the comment box below and edit before submitting.`,
+  }),
 });
 
 if (triggerComment) await react(triggerComment.id, 'rocket');
