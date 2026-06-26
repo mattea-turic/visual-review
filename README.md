@@ -2,6 +2,11 @@
 
 A Claude Code skill + GitHub Action for design visual reviews of Canonical Vanilla/Jinja demo PRs.
 
+It works across three layers:
+- **Code** — reads the Jinja templates and SCSS diff to check Vanilla Framework patterns (`vf_hero`, `vf_tiered_list`, etc.), macro usage, spacing classes (`.p-section`, `.p-section--deep`), deprecated patterns, and double-wrapping
+- **Screenshots** — captures the demo at mobile (375px), tablet (768px), and desktop (1280px) to check responsive behaviour and image sizing per section
+- **Figma** — compares against the linked design frame for spacing tokens, asset dimensions, and layout fidelity
+
 ## Local use (Claude Code skill)
 
 Copy `visual-review.md` to `~/.claude/commands/visual-review.md`, then run:
@@ -10,7 +15,7 @@ Copy `visual-review.md` to `~/.claude/commands/visual-review.md`, then run:
 /visual-review <pr-url>
 ```
 
-Claude fetches the PR, takes responsive screenshots, compares to the Figma design, and drafts a review in the right voice for you to edit and post.
+Claude fetches the PR, reads the changed templates, takes responsive screenshots, compares to the Figma design, and drafts a review for you to edit and post.
 
 Requires:
 - `gh` CLI authenticated
