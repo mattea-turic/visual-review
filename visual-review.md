@@ -56,14 +56,23 @@ below, and raise the missing link as a finding in the write-up.
 
 Before drilling into patterns, sweep the whole page:
 
-- **Background colour** correct (e.g. `#F3F3F3` where expected) — and applied via
-  the theme class / Vanilla token, **not a hard-coded hex**.
-- Overall section rhythm looks right at a glance (regular spacing between sections,
-  deep at the bottom).
-- Correct theme / fonts / Ubuntu accent usage page-wide.
-- Anything that's true of the whole page rather than one pattern.
+**Background / theme:**
+- Background colour correct and applied via a Vanilla theme class (`.is-dark`, `.is-paper`, `.is-highlighted`) or token — **not** a hard-coded hex or inline `style="background:…"`. If you see a raw hex anywhere, flag it and name the correct token/class.
+- Theme class applied at the right level — typically on the `.p-strip` or section wrapper, not buried inside a `.col-*`.
+- Ubuntu font in use page-wide (check rendered screenshots — if a system font is falling back, something is wrong with the font stack).
+- Ubuntu accent colours used correctly: orange (`#E95420`) only for interactive/brand moments, not decorative fills. If something looks off chromatically, flag it.
 
-*(Extend this list as your standing "General:" checklist.)*
+**Section rhythm (code + visual):**
+- Every top-level section uses a Vanilla spacing class (`.p-section`, `.p-section--deep`, `.p-section--shallow`) — no section should have no spacing class and rely on default browser margins.
+- The last section on the page uses `.p-section--deep` (~128px). If it's `.p-section`, flag it.
+- Spacing between sections looks visually even when scanning the desktop screenshot — no section looks collapsed or unexpectedly airy compared to its neighbours.
+
+**Page-wide code hygiene:**
+- No `!important` overrides in the SCSS diff.
+- No inline `style=""` attributes setting spacing, colour, or layout.
+- No hard-coded px/rem values for spacing that should be a Vanilla class.
+
+*(Add to this list as new page-wide patterns emerge.)*
 
 ---
 
@@ -95,16 +104,25 @@ is a tiered list" — lean on that.
 
 ## Check A — Pattern / macro alignment
 
-- Uses the canonical Vanilla **macro** (`{% call %}` section macros, `vf-*`
-  includes), not hand-rolled `<div class="…">`? `grep` for the macro and confirm
-  this PR matches the established call signature / slot structure.
-- Macro already applies section padding → template must not also hand-set it.
-  **Watch for double-wrapping** (e.g. two `.p-section--shallow`s around one element)
-  — phrase it like *"wrapped twice I think? could we remove one of the shallows
-  please?"*.
-- Flag deprecated patterns + name the fix: `.p-block` → `.p-section--shallow`;
-  `.p-strip--dark/--light/--accent` → theming (`is-dark`) / `.p-strip--highlighted`;
-  lone `col-12` for fixed width → `.u-fixed-width`.
+**Macro usage:**
+- Each section should use a canonical Vanilla macro, not hand-rolled HTML. Known macros to look for:
+  - `vf_hero` / `{% call(slot) vf_hero(…) %}`
+  - `vf_tiered_list`
+  - `vf_tab_section`
+  - `vf_basic_section` / `vf_divided_section`
+  - `{% include "templates/…/_…_section.html" %}` includes
+- Grep for the macro name and confirm it's being called correctly. A section built entirely from `<div class="p-section">…<div class="row">…</div></div>` by hand is a red flag unless there genuinely isn't a macro for it yet.
+- Check the macro's **call signature / slot structure**: required args present, no extra wrapper divs inserted inside `{% call %}` blocks that the macro doesn't expect. If a slot is being passed content that doesn't match what the macro renders into, the layout will be off even if it visually looks close.
+
+**Macro + padding interaction:**
+- Most macros already apply their own section padding internally. If the template also adds a `.p-section` or `.p-section--shallow` on the outer wrapper, that doubles the spacing. Watch for **any form of double-wrapping**: same class twice, or a padding class on both the macro call-site and the element inside `{% call %}`.
+- Phrase it as: *"wrapped twice I think? could we remove one of the shallows please?"*
+
+**Deprecated patterns — flag and name the fix:**
+- `.p-block` → use `.p-section--shallow`
+- `.p-strip--dark` / `.p-strip--light` / `.p-strip--accent` → use theming (`.is-dark`) or `.p-strip--highlighted`
+- Lone `<div class="col-12">` for fixed-width content → use `.u-fixed-width`
+- Any other pattern that appears in the diff but is absent from current Vanilla docs should be flagged with a link to the replacement.
 
 ---
 
@@ -127,19 +145,48 @@ Verify the classes, not raw px:
 - **FLAG:** inline `style="padding…"`, arbitrary px/rem padding, or `$spv`/`$sph`
   overrides faking any tier.
 
+**Figma → code spacing comparison (do this per section):**
+For each section visible in the Figma frame, read the spacing token Figma shows (regular / deep / shallow) and check the code uses the matching class. Common mismatches to catch:
+- Figma shows regular spacing → code has `.p-section--deep` → flag as too much bottom padding
+- Figma shows regular → code has no spacing class or inline padding → flag
+- Figma shows deep (end of page) → code has `.p-section` → flag as too little
+
+**Structural nesting issues (check the template carefully):**
+- `.p-section` (regular) used at **block level inside another section** — blocks within a section should use `.p-section--shallow`, not regular. Regular padding here adds ~64px inside a section that already has its own spacing.
+- **Trailing shallow before a section boundary** — if the last block/element inside a section has `.p-section--shallow`, and the wrapping section also has `.p-section`, those two stack: the shallow's 24px bottom sits on top of the section's 64px bottom, producing ~88px where 64px was intended. Flag it.
+- More generally: scan the nesting and ask "does padding exist at both the block level and the section level for the same gap?" If yes, one of them is excess.
+
 ---
 
 ## Check C — Images, logos & Figma fidelity
 
-- **Aspect ratio:** default images **3:2**; videos **16:9**; **cinematic** only
-  where the Figma frame specifies it. Flag 16:9 on a static image.
-- **Source:** images/logos from the **assets server**, not hard-coded/local paths.
-- **Logos:** use the **Figma-exported** version so it aligns to adjacent text per
-  Figma (call out specifically for hero/CTA logos).
-- Explicit `width`+`height` (or `aspect-ratio`) to avoid layout shift; `alt`
-  present (`alt=""` only if decorative).
-- With Figma MCP + link: confirm asset names/exports and spacing tokens match the
-  node.
+**Aspect ratio:**
+- Default images: **3:2**. Videos: **16:9**. Cinematic crops only where the Figma frame explicitly specifies them.
+- In the code, look for `width` + `height` attributes or `aspect-ratio` CSS — the ratio should match. A `width="800" height="450"` on a static image is 16:9, which is wrong for a standard image; flag it.
+- If the Figma frame shows a 3:2 crop and the code renders 16:9 (or vice versa), that's a fidelity issue — name both what Figma shows and what the code produces.
+
+**Asset source:**
+- All images and logos must come from the Canonical **assets server** (`assets.ubuntu.com` or `assets.canonical.com`). Grep the template for `src=` and check every URL. A local path (`/static/images/…`), a relative path, or any other domain is a flag.
+- With Figma MCP: confirm the asset filename in the Figma export settings matches what's in the `src` attribute. If the names differ, it may be an outdated or wrong asset.
+
+**Logos:**
+- Logos should use the **Figma-exported** version — the specific file that Figma's export panel produces — so sizing and alignment match the design exactly. An approximation from a different source may be slightly different dimensions and throw off text alignment.
+- Call this out specifically for hero and CTA sections, where logo/text alignment is most visible.
+- Check that logos aren't being scaled in CSS in a way that would blur them (prefer SVG; if PNG, confirm it's exported at the correct resolution for its rendered size).
+
+**Alt text:**
+- Every `<img>` must have an `alt` attribute.
+- `alt=""` is correct **only** for decorative images (background textures, purely visual dividers). Anything that communicates content needs descriptive alt text.
+- If `alt` is missing entirely, that's an accessibility flag — call it out clearly.
+
+**Figma → image fidelity (with MCP):**
+- For each image in the Figma frame, read the node's export settings and dimensions. Compare to what the template renders: correct asset, correct ratio, matching dimensions / `max-width`.
+- If Figma shows a specific asset at a specific size and the code uses a different asset or different sizing, name the discrepancy.
+
+**Viewport-relative size (per section):**
+- For each section that contains an image, check whether it's proportionate at tablet (768px) and mobile (375px).
+- Red flags: image takes up most of the viewport before the user sees any text; a decorative/supporting image that dwarfs the heading; a logo significantly taller/wider than adjacent copy.
+- If it looks out of proportion at a smaller viewport, flag it and suggest `u-hide--small` / `u-hide--medium` to hide, or a `max-width` utility to cap it — whichever fits the pattern.
 
 ---
 
@@ -158,10 +205,19 @@ Then Read each image:
 - `/tmp/vr-screenshots/tablet.png` — 768px (Vanilla "medium")
 - `/tmp/vr-screenshots/desktop.png` — 1280px (Vanilla "large")
 
-At each breakpoint: content stacks sensibly, no overflow / overlap, images scale and
-aren't oversized, spacing tiers hold. Raise broken behaviour as a real flag; offer
-enhancements (e.g. hiding images at mobile where they don't scale well) as hedged
-suggestions.
+At each breakpoint, check:
+- Content stacks sensibly, no overflow / overlap, spacing tiers hold.
+- **Image sizing per section** — scan each section that has an image. Is the image
+  proportionate, or does it dominate the viewport and push the actual content way
+  down? At mobile especially: would a user have to scroll past a giant image before
+  reaching the heading + copy? If yes, flag it. Common fixes: hide with
+  `u-hide--small`, cap with `max-width`, or switch to a smaller asset at that
+  breakpoint.
+- Logos and icons don't balloon at smaller viewports (a logo that's decorative at
+  desktop can look absurd at 375px if it's unconstrained).
+
+Raise broken or disproportionate sizing as a real flag; offer hiding/capping as a
+hedged suggestion when it's an enhancement rather than a bug.
 
 If no preview URL is in the PR, note this and ask the author to confirm responsive
 behaviour manually.
