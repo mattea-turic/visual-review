@@ -1,0 +1,69 @@
+name: Visual review (Copilot)
+
+# Kicks off a Copilot-run visual review of an external demo PR.
+# Parses the PR's demo / Figma / copy-doc links, then opens an issue in THIS repo
+# that @-mentions Copilot and points it at SKILL.md. Copilot drafts the review and
+# posts it back here — nothing is posted to the external PR.
+#
+# Prerequisite: the GitHub Copilot coding agent must be enabled for this repo.
+# (Settings → Copilot → Coding agent. Needs a Copilot plan that includes it.)
+# Until then the issue is created but Copilot won't act on the mention — you can
+# assign the issue to Copilot manually to trigger it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_url:
+        description: 'Full URL of the demo PR to review (e.g. https://github.com/canonical/ubuntu.com/pull/16495)'
+        required: true
+        type: string
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  kickoff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse PR inputs
+        id: parse
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x scripts/parse-pr-inputs.sh
+          OUT=$(./scripts/parse-pr-inputs.sh "${{ inputs.pr_url }}")
+          echo "$OUT"
+          jq_get() { echo "$OUT" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d$1 or 'Not found')"; }
+          {
+            echo "demo_url=$(echo "$OUT" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['demo_urls'][0] if d['demo_urls'] else 'Not found')")"
+            echo "figma_url=$(jq_get "['figma_url']")"
+            echo "figma_node=$(jq_get "['figma_node_id']")"
+            echo "copydoc_url=$(jq_get "['copydoc_url']")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Open review issue and mention Copilot
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BODY="@copilot Run a visual review of this demo PR. Follow \`SKILL.md\` in this repo exactly, and post the finished review as a comment on **this issue** — do NOT comment on the external PR.
+
+          **PR:** ${{ inputs.pr_url }}
+
+          **Parsed inputs:**
+          - **Demo URL:** ${{ steps.parse.outputs.demo_url }}
+          - **Figma:** ${{ steps.parse.outputs.figma_url }} (node id: ${{ steps.parse.outputs.figma_node }})
+          - **Copy doc:** ${{ steps.parse.outputs.copydoc_url }}
+
+          **Reminders:**
+          - Read the public PR with \`gh pr view\` / \`gh pr diff\` (no external write access).
+          - If Figma can't be machine-compared or screenshots can't run here, say so in the write-up.
+          - Draft only — Mattea edits and submits the review herself.
+          - Save a copy to \`reports/<slug>-$(date +%F).md\` and open a PR adding it."
+
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "Visual review: ${{ inputs.pr_url }}" \
+            --body "$BODY"
