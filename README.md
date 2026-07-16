@@ -11,13 +11,16 @@ Background and theme classes applied correctly (no hard-coded hex values); secti
 Each section uses the canonical Vanilla macro (`vf_hero`, `vf_tiered_list`, `vf_tab_section`, `vf_basic_section`, `vf_divided_section`), not hand-rolled HTML. Call signatures and slot structures verified. Deprecated patterns flagged with the correct replacement (`.p-block` → `.p-section--shallow`, `.p-strip--dark` → `.is-dark`, etc.).
 
 **Padding and spacing**
-Spacing classes verified against the Figma spacing token per section — mismatches between what Figma specifies (regular / deep / shallow) and what the code uses get flagged. Structural nesting issues caught too: regular padding at block level inside a section, trailing shallow that stacks with the section wrapper, any form of double-wrapping.
+Spacing classes verified against the Figma spacing token per section — mismatches between what Figma specifies (regular / deep / shallow) and what the code uses get flagged. The comparison is block-structural, not just visual order: Figma frame names encode the Vanilla padding classes, so the review checks *which block each element lives inside* (e.g. a chip that belongs in the H1's shallow block vs. rendered in the description block), and measures the rendered DOM against the frame geometry when a gap is in question. Structural nesting issues caught too: regular padding at block level inside a section, trailing shallow that stacks with the section wrapper, any form of double-wrapping.
 
 **Images, logos, and Figma fidelity**
 Aspect ratios checked (3:2 default, 16:9 for video, cinematic only where Figma specifies). Asset URLs verified against the Canonical assets server. Logos confirmed as Figma-exported. Alt text presence and correctness checked. With Figma MCP connected, asset filenames and dimensions compared to the design node directly.
 
 **Responsive behaviour**
 Screenshots at mobile (375px), tablet (768px), and desktop (1280px). Content stacking, overflow, and spacing tiers checked at each breakpoint. Image sizing checked per section — flags anything that dominates the viewport or looks disproportionate at smaller sizes, with suggestions to hide (`u-hide--small`) or cap with `max-width`.
+
+**Output**
+The paste-ready draft contains asks only — sections that pass are summarised outside the draft, not listed as LGTM checkboxes — and sticks to visual findings (Figma fidelity, spacing, images, responsiveness, theming); code-hygiene nits stay out of it.
 
 ---
 

@@ -25,5 +25,6 @@ your job is to review the external demo PR named in the issue and draft the revi
 ## Voice
 
 Match Mattea's voice precisely — warm opener, @-tag the author, `- [ ]` checkboxes,
-hedged asks with the reason attached, "LGTM" for passes, polite scope-outs with
-cc's. The Voice section at the bottom of `SKILL.md` is the spec.
+hedged asks with the reason attached, polite scope-outs with cc's. Asks only: no
+LGTM lines, no closer after the last item, visual findings only. The Voice section
+at the bottom of `SKILL.md` is the spec.

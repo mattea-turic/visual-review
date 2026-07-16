@@ -62,6 +62,15 @@ Use the Figma link + `node-id` from the parsed inputs.
   note: expected spacing tokens and layout per section, component names (to match
   patterns in Step 2), image/asset dimensions and aspect ratios, and any visible
   discrepancies vs. what the code produces.
+- **Compare block structure, not just element order.** The node metadata returns
+  the frame tree, and the designers name frames after the Vanilla padding classes
+  (e.g. `p-section is-shallow`). Check *which block each element lives inside*, not
+  just that elements appear in the right sequence — e.g. a chip that sits inside
+  the H1's shallow block in Figma but gets rendered as the first paragraph of the
+  description block will be in the right *order* yet have the spacing in the wrong
+  place. Frame x/y/width/height give you the expected gaps in px; when a spacing
+  question is close, measure the rendered DOM (Playwright `evaluate` +
+  `getBoundingClientRect`) rather than eyeballing screenshots.
 - **If no Figma MCP is available in this environment** (the desktop Dev-Mode MCP
   Mattea uses locally is *not* reachable from CI): do the **pattern-first fallback**
   below, and **state clearly in the write-up that Figma was not machine-compared** —
@@ -230,18 +239,31 @@ checked.
 - Then a `Comments:` line. First a **General:** group, then **bold pattern/section
   headings** (Hero, [CTA section], etc.).
 - Use GitHub **checkboxes** (`- [ ]`) per item.
-- Passes are just **"LGTM"** / **"LGTM!"** / **"Mostly LGTM, with the caveat …"**.
+- **Asks only — no LGTM lines.** Sections that pass are left out of the draft
+  entirely. Summarise what passed in the report notes (outside the paste-ready
+  draft) so Mattea knows it was checked, but the GitHub draft stays lean.
 - Asks are **hedged questions with the reason attached**, not commands:
   *"I'm not sure about X — we typically do Y, for consistency. Could we …?"*,
   *"could you pls …"*, *"would it be possible to …, if that's possible that'd be
   great"*.
 - **Scope things out** politely: *"this would be a discussion at a later time"*,
-  *"should be investigated a lil (cc: @x @y)"*; cc colleagues when broader than this PR.
-- Casual register fine: *pls, little, kinda, Lmk*, em-dashes.
-- Only close with *"Lmk if the above takes too much engineering effort, though!"* if
-  the asks genuinely involve significant rework. Omit for minor changes.
+  *"should be investigated a little (cc: @x @y)"*; cc colleagues when broader than this PR.
+- Casual register fine: *pls, little, kinda, Lmk*, em-dashes. Never "lil" — always
+  "little".
+- No sign-off / closer line after the last item — in particular, never *"Lmk if the
+  above takes too much engineering effort, though!"*. End after the overall call.
 - If Figma wasn't machine-compared or screenshots couldn't run, note it plainly so
   Mattea knows what still needs a human eye.
+
+**Scope — visual findings only:**
+- The draft covers what a designer would flag: Figma fidelity, spacing/rhythm,
+  images and logos, responsiveness, theming.
+- Leave out code-hygiene or UX-specific items (leftover `id`/`attrs` from docs
+  examples, macro call-style nits, naming). Mention them in the report notes if
+  notable; they don't go in the draft.
+- Functional bugs found during the comparison (e.g. a link to a dead anchor) are
+  borderline: include them, flagged as cuttable if Mattea would rather leave
+  functional QA to the devs.
 
 End with an overall call: **approve / comment / request changes**, written so it
 pastes straight into a GitHub review.
@@ -254,11 +276,10 @@ Thanks for your work on this page @<author>!
 Comments:
 
 **General:**
-- [ ] <background / page-wide check>
+- [ ] <page-wide ask, if any>
 
-**<Pattern / section name>**
-- [ ] LGTM
+**<Pattern / section name with an ask>**
 - [ ] <hedged ask + reasoning, or scoped-out note with cc>
 
-<effort-aware closer if needed>
+Overall: <approve / comment / request changes> — <one-line reason>
 ```
